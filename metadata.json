@@ -1,0 +1,5 @@
+{
+  "name": "小六壬实时占算",
+  "description": "基于传统小六壬算法的实时占算工具，自动读取当前时间，提供即时占卜结果与解析。",
+  "requestFramePermissions": []
+}

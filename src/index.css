@@ -1,0 +1,10 @@
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+SC:wght@400;700&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-serif: "Noto Serif SC", serif;
+}
+
+body {
+  @apply bg-[#f5f5f5] text-[#333] font-serif;
+}
