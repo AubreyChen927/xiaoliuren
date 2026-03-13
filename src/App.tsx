@@ -1,20 +1,29 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Clock, Calendar, Compass, Info, RefreshCw } from 'lucide-react';
-import { calculateXiaoLiuRen, SHICHEN_NAMES } from './utils/xiaoliuren';
+import { Clock, Calendar, Compass, Info, RefreshCw, Edit3, Zap } from 'lucide-react';
+import { calculateXiaoLiuRen } from './utils/xiaoliuren';
+
+type Mode = 'realtime' | 'manual';
 
 export default function App() {
+  const [mode, setMode] = useState<Mode>('realtime');
+  const [manualDate, setManualDate] = useState(new Date().toISOString().slice(0, 16));
   const [now, setNow] = useState(new Date());
   const [divination, setDivination] = useState(calculateXiaoLiuRen(new Date()));
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      const date = new Date();
-      setNow(date);
+    if (mode === 'realtime') {
+      const timer = setInterval(() => {
+        const date = new Date();
+        setNow(date);
+        setDivination(calculateXiaoLiuRen(date));
+      }, 1000);
+      return () => clearInterval(timer);
+    } else {
+      const date = new Date(manualDate);
       setDivination(calculateXiaoLiuRen(date));
-    }, 1000);
-    return () => clearInterval(timer);
-  }, []);
+    }
+  }, [mode, manualDate]);
 
   const formatDate = (date: Date) => {
     return date.toLocaleString('zh-CN', {
@@ -23,14 +32,14 @@ export default function App() {
       day: '2-digit',
       hour: '2-digit',
       minute: '2-digit',
-      second: '2-digit',
+      second: mode === 'realtime' ? '2-digit' : undefined,
       hour12: false,
     });
   };
 
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-4 md:p-8 bg-[#f5f5f5]">
-      <div className="w-full max-w-md space-y-8">
+      <div className="w-full max-w-md space-y-6">
         {/* Header */}
         <header className="text-center space-y-2">
           <motion.h1 
@@ -38,7 +47,7 @@ export default function App() {
             animate={{ opacity: 1, y: 0 }}
             className="text-4xl font-bold text-[#c0392b] tracking-widest"
           >
-            小六壬实时占算
+            小六壬占算
           </motion.h1>
           <motion.p 
             initial={{ opacity: 0 }}
@@ -50,21 +59,56 @@ export default function App() {
           </motion.p>
         </header>
 
+        {/* Mode Switcher */}
+        <div className="flex bg-gray-200 p-1 rounded-xl">
+          <button
+            onClick={() => setMode('realtime')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
+              mode === 'realtime' ? 'bg-white text-[#c0392b] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Zap size={14} />
+            实时模式
+          </button>
+          <button
+            onClick={() => setMode('manual')}
+            className={`flex-1 flex items-center justify-center gap-2 py-2 rounded-lg text-sm font-medium transition-all ${
+              mode === 'manual' ? 'bg-white text-[#c0392b] shadow-sm' : 'text-gray-500 hover:text-gray-700'
+            }`}
+          >
+            <Edit3 size={14} />
+            手动输入
+          </button>
+        </div>
+
         {/* Main Card */}
         <motion.div 
+          layout
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           className="bg-white rounded-3xl shadow-xl overflow-hidden border border-gray-100"
         >
-          {/* Time Display */}
-          <div className="bg-[#c0392b] p-6 text-white text-center space-y-1">
-            <div className="flex items-center justify-center gap-2 text-white/80 text-sm mb-1">
+          {/* Time Display / Input */}
+          <div className="bg-[#c0392b] p-6 text-white text-center space-y-3">
+            <div className="flex items-center justify-center gap-2 text-white/80 text-sm">
               <Clock size={14} />
-              <span>当前时间</span>
+              <span>{mode === 'realtime' ? '当前时间' : '指定时间'}</span>
             </div>
-            <div className="text-2xl font-mono tracking-tighter">
-              {formatDate(now)}
-            </div>
+            
+            {mode === 'realtime' ? (
+              <div className="text-2xl font-mono tracking-tighter">
+                {formatDate(now)}
+              </div>
+            ) : (
+              <div className="px-2">
+                <input
+                  type="datetime-local"
+                  value={manualDate}
+                  onChange={(e) => setManualDate(e.target.value)}
+                  className="w-full bg-white/10 border border-white/20 rounded-lg px-3 py-2 text-white focus:outline-none focus:bg-white/20 transition-colors text-center font-mono"
+                />
+              </div>
+            )}
           </div>
 
           <div className="p-8 space-y-8">
@@ -77,7 +121,7 @@ export default function App() {
               </div>
               <div className="bg-gray-50 p-4 rounded-2xl flex flex-col items-center justify-center space-y-1 border border-gray-100">
                 <Compass size={20} className="text-[#c0392b] opacity-60" />
-                <span className="text-xs text-gray-400 uppercase tracking-widest">当前时辰</span>
+                <span className="text-xs text-gray-400 uppercase tracking-widest">对应时辰</span>
                 <span className="text-lg font-medium">{divination.shichen}时</span>
               </div>
             </div>
@@ -94,7 +138,7 @@ export default function App() {
                   <span className="text-5xl font-bold text-[#c0392b]">{divination.result.name}</span>
                 </motion.div>
                 <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-[#c0392b] text-white px-3 py-0.5 rounded-full text-[10px] tracking-widest">
-                  实时占算
+                  {mode === 'realtime' ? '实时占算' : '指时占算'}
                 </div>
               </div>
 
@@ -146,9 +190,15 @@ export default function App() {
 
         {/* Refresh Hint */}
         <div className="flex justify-center">
-          <div className="flex items-center gap-2 text-[10px] text-gray-400 animate-pulse">
-            <RefreshCw size={10} />
-            <span>数据每秒实时更新</span>
+          <div className="flex items-center gap-2 text-[10px] text-gray-400">
+            {mode === 'realtime' ? (
+              <>
+                <RefreshCw size={10} className="animate-spin" />
+                <span>数据每秒实时更新</span>
+              </>
+            ) : (
+              <span>已切换至手动查询模式</span>
+            )}
           </div>
         </div>
       </div>
